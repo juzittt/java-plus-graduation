@@ -15,3 +15,12 @@ spring:
             - file:./infra/config-repo/core
             - file:./infra/config-repo/stats
             - file:./infra/config-repo/infra
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

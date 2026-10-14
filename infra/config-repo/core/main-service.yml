@@ -15,8 +15,8 @@ spring:
   datasource:
     driverClassName: org.postgresql.Driver
     url: jdbc:postgresql://localhost:6502/ewm
-    username: dbuser
-    password: 12345
+    username: postgres
+    password: password
 
 jackson:
   serialization:

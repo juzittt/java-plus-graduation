@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ewm
+    ports:
+      - "6502:5432"
+    volumes:
+
+      - ../../../../core/main-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
