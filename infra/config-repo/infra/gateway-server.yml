@@ -8,34 +8,15 @@ spring:
         locator:
           enabled: false
       routes:
-        - id: main-service-read
-          uri: lb://main-service
-          predicates:
-            - Path=/categories/**, /events/**, /compilations/**
-            - Method=GET
-          filters:
-            - name: Retry
-              args:
-                retries: 2
-                statuses:
-                  - BAD_GATEWAY
-                  - SERVICE_UNAVAILABLE
-                  - GATEWAY_TIMEOUT
-                methods:
-                  - GET
-                backoff:
-                  firstBackoff: 100ms
-                  maxBackoff: 500ms
-
-        - id: main-service-write
-          uri: lb://main-service
-          predicates:
-            - Path=/users/**, /events/**, /compilations/**, /requests/**
-
         - id: stats-service
           uri: lb://stats-server
           predicates:
             - Path=/stats/**, /hit/**
+
+        - id: main-service
+          uri: lb://main-service
+          predicates:
+            - Path=/**
 
       globalcors:
         add-to-simple-url-handler-mapping: true
