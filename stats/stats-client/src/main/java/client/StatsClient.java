@@ -1,18 +1,15 @@
 package client;
 
 import ewm.dto.EndpointHitDto;
-import exception.StatsServerUnavailable;
-import org.springframework.cloud.client.ServiceInstance;
-import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.ResponseEntity;
-import org.springframework.retry.backoff.FixedBackOffPolicy;
-import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -20,76 +17,43 @@ import java.util.List;
 @Component
 public class StatsClient {
 
-    private final DiscoveryClient discoveryClient;
-    private final RestClient restClient;
-    private final RetryTemplate retryTemplate;
+    private final RestTemplate restTemplate;
+    private final String statsServerUrl;
 
-    private final String statsServiceId = "stats-server";
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    public StatsClient(DiscoveryClient discoveryClient) {
-        this.discoveryClient = discoveryClient;
-        this.restClient = RestClient.create();
-
-        this.retryTemplate = new RetryTemplate();
-
-        FixedBackOffPolicy fixedBackOffPolicy = new FixedBackOffPolicy();
-        fixedBackOffPolicy.setBackOffPeriod(3000L);
-        retryTemplate.setBackOffPolicy(fixedBackOffPolicy);
-
-        MaxAttemptsRetryPolicy retryPolicy = new MaxAttemptsRetryPolicy();
-        retryPolicy.setMaxAttempts(3);
-        retryTemplate.setRetryPolicy(retryPolicy);
-    }
-
-    private ServiceInstance getInstance() {
-        try {
-            return discoveryClient
-                    .getInstances(statsServiceId)
-                    .getFirst();
-        } catch (Exception exception) {
-            throw new StatsServerUnavailable(
-                    "Ошибка обнаружения адреса сервиса статистики с id: " + statsServiceId,
-                    exception
-            );
-        }
-    }
-
-    private URI makeUri(String path) {
-        ServiceInstance instance = retryTemplate.execute(cxt -> getInstance());
-        return URI.create("http://" + instance.getHost() + ":" + instance.getPort() + path);
+    public StatsClient(@Value("${stats-server.url:http://stats-server}") String statsServerUrl,
+                       @LoadBalanced RestTemplate restTemplate) {
+        this.statsServerUrl = statsServerUrl;
+        this.restTemplate = restTemplate;
     }
 
     public ResponseEntity<Object> saveHit(EndpointHitDto hitDto) {
-        URI uri = makeUri("/hit");
-        return restClient.post()
-                .uri(uri)
-                .body(hitDto)
-                .retrieve()
-                .toEntity(Object.class);
+        return restTemplate.postForEntity(statsServerUrl + "/hit", hitDto, Object.class);
     }
 
     public ResponseEntity<Object> getStats(LocalDateTime start,
                                            LocalDateTime end,
                                            List<String> uris,
                                            Boolean unique) {
-        URI baseUri = makeUri("/stats");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-        UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUri(baseUri)
-                .queryParam("start", start.format(FORMATTER))
-                .queryParam("end", end.format(FORMATTER))
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl + "/stats")
+                .queryParam("start", start.format(formatter))
+                .queryParam("end", end.format(formatter))
                 .queryParam("unique", unique);
 
         if (uris != null && !uris.isEmpty()) {
             uris.forEach(uri -> builder.queryParam("uris", uri));
         }
 
-        URI uri = builder.build().encode().toUri();
+        return restTemplate.getForEntity(builder.toUriString(), Object.class);
+    }
 
-        return restClient.get()
-                .uri(uri)
-                .retrieve()
-                .toEntity(Object.class);
+    @Configuration
+    static class RestTemplateConfig {
+        @Bean
+        @LoadBalanced
+        public RestTemplate loadBalancedRestTemplate() {
+            return new RestTemplate();
+        }
     }
 }

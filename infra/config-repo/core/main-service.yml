@@ -27,3 +27,6 @@ logging:
   level:
     org.springframework.orm.jpa: INFO
     org.springframework.transaction: INFO
+
+stats-server:
+  url: http://stats-server
