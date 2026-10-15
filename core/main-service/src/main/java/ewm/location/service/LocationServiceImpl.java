@@ -38,7 +38,6 @@ public class LocationServiceImpl implements LocationService {
     @Transactional
     public LocationDto create(NewLocationDto dto) {
         validateLocationType(dto.getLocationType());
-
         Location location = locationMapper.toEntity(dto);
         Location saved = locationRepository.save(location);
         return locationMapper.toDto(saved);
@@ -59,7 +58,6 @@ public class LocationServiceImpl implements LocationService {
     @Transactional
     public LocationDto update(Long id, UpdateLocationDto dto) {
         validateUpdate(dto);
-
         Location existing = getLocationOrThrow(id);
 
         locationMapper.updateEntityFromDto(dto, existing);
@@ -98,39 +96,21 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public List<EventDistanceDto> findEventsWithinRadius(Float lat, Float lon, Double radius) {
-        if (lat == null || lon == null) {
-            throw new ValidationException("Координаты lat и lon обязательны");
-        }
-        if (radius == null || radius <= 0) {
-            throw new ValidationException("Радиус должен быть положительным числом");
-        }
-        if (lat < -90.0 || lat > 90.0) {
-            throw new ValidationException("Широта должна быть от -90 до 90");
-        }
-        if (lon < -180.0 || lon > 180.0) {
-            throw new ValidationException("Долгота должна быть от -180 до 180");
-        }
+        if (lat == null || lon == null) throw new ValidationException("Координаты lat и lon обязательны");
+        if (radius == null || radius <= 0) throw new ValidationException("Радиус должен быть положительным числом");
+        if (lat < -90.0 || lat > 90.0) throw new ValidationException("Широта должна быть от -90 до 90");
+        if (lon < -180.0 || lon > 180.0) throw new ValidationException("Долгота должна быть от -180 до 180");
 
         List<Object[]> results = locationRepository.findEventsWithDistanceWithinRadius(lat, lon, radius);
-        return results.stream()
-                .map(this::mapToEventDistanceDto)
-                .toList();
+        return results.stream().map(this::mapToEventDistanceDto).toList();
     }
 
     @Override
     public DistanceDto getDistanceToEvent(Long eventId, Float lat, Float lon) {
-        if (eventId == null) {
-            throw new ValidationException("ID события обязателен");
-        }
-        if (lat == null || lon == null) {
-            throw new ValidationException("Координаты lat и lon обязательны");
-        }
-        if (lat < -90.0 || lat > 90.0) {
-            throw new ValidationException("Широта должна быть от -90 до 90");
-        }
-        if (lon < -180.0 || lon > 180.0) {
-            throw new ValidationException("Долгота должна быть от -180 до 180");
-        }
+        if (eventId == null) throw new ValidationException("ID события обязателен");
+        if (lat == null || lon == null) throw new ValidationException("Координаты lat и lon обязательны");
+        if (lat < -90.0 || lat > 90.0) throw new ValidationException("Широта должна быть от -90 до 90");
+        if (lon < -180.0 || lon > 180.0) throw new ValidationException("Долгота должна быть от -180 до 180");
 
         if (!eventRepository.existsById(eventId)) {
             throw new NotFoundException("Событие с id=" + eventId + " не найдено");
@@ -141,10 +121,7 @@ public class LocationServiceImpl implements LocationService {
             throw new NotFoundException("Не удалось вычислить расстояние до события с id=" + eventId);
         }
 
-        return DistanceDto.builder()
-                .eventId(eventId)
-                .distance(distance)
-                .build();
+        return DistanceDto.builder().eventId(eventId).distance(distance).build();
     }
 
     private Location getLocationOrThrow(Long id) {
@@ -170,43 +147,26 @@ public class LocationServiceImpl implements LocationService {
         try {
             LocationType.valueOf(locationType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new ValidationException(
-                    "Недопустимое значение locationType: '" + locationType +
-                            "'. Допустимые значения: " + Arrays.toString(LocationType.values())
-            );
+            throw new ValidationException("Недопустимое значение locationType: '" + locationType + "'. Допустимые значения: " + Arrays.toString(LocationType.values()));
         }
     }
 
     public void validateUpdate(UpdateLocationDto dto) {
         if (dto.getName() != null) {
-            if (dto.getName().isBlank()) {
-                throw new ValidationException("Название локации не может быть пустым");
-            }
-            if (dto.getName().length() > 255) {
-                throw new ValidationException("Название локации не должно превышать 255 символов");
-            }
+            if (dto.getName().isBlank()) throw new ValidationException("Название локации не может быть пустым");
+            if (dto.getName().length() > 255) throw new ValidationException("Название локации не должно превышать 255 символов");
         }
-
         if (dto.getDescription() != null && dto.getDescription().length() > 1000) {
             throw new ValidationException("Описание локации не должно превышать 1000 символов");
         }
-
         if (dto.getLocationType() != null) {
             validateLocationType(dto.getLocationType());
         }
-
         if (dto.getLat() != null || dto.getLon() != null) {
-            if (dto.getLat() == null || dto.getLon() == null) {
-                throw new ValidationException("Координаты lat и lon должны быть указаны вместе");
-            }
-            if (dto.getLat() < -90.0 || dto.getLat() > 90.0) {
-                throw new ValidationException("Широта должна быть от -90 до 90");
-            }
-            if (dto.getLon() < -180.0 || dto.getLon() > 180.0) {
-                throw new ValidationException("Долгота должна быть от -180 до 180");
-            }
+            if (dto.getLat() == null || dto.getLon() == null) throw new ValidationException("Координаты lat и lon должны быть указаны вместе");
+            if (dto.getLat() < -90.0 || dto.getLat() > 90.0) throw new ValidationException("Широта должна быть от -90 до 90");
+            if (dto.getLon() < -180.0 || dto.getLon() > 180.0) throw new ValidationException("Долгота должна быть от -180 до 180");
         }
-
         if (dto.getRadiusMeters() != null && dto.getRadiusMeters() <= 0) {
             throw new ValidationException("Радиус должен быть положительным числом");
         }
