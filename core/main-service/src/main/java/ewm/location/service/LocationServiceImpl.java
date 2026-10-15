@@ -19,7 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +38,7 @@ public class LocationServiceImpl implements LocationService {
     public LocationDto create(NewLocationDto dto) {
         validateLocationType(dto.getLocationType());
         Location location = locationMapper.toEntity(dto);
-        Location saved = locationRepository.save(location);
-        return locationMapper.toDto(saved);
+        return locationMapper.toDto(locationRepository.save(location));
     }
 
     @Override
@@ -50,8 +48,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public LocationDto getById(Long id) {
-        Location location = getLocationOrThrow(id);
-        return locationMapper.toDto(location);
+        return locationMapper.toDto(getLocationOrThrow(id));
     }
 
     @Override
@@ -59,11 +56,8 @@ public class LocationServiceImpl implements LocationService {
     public LocationDto update(Long id, UpdateLocationDto dto) {
         validateUpdate(dto);
         Location existing = getLocationOrThrow(id);
-
         locationMapper.updateEntityFromDto(dto, existing);
-
-        Location updated = locationRepository.save(existing);
-        return locationMapper.toDto(updated);
+        return locationMapper.toDto(locationRepository.save(existing));
     }
 
     @Override
@@ -78,9 +72,7 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public List<LocationDto> findLocationsContainingPoint(Float lat, Float lon) {
         return locationRepository.findLocationsContainingPoint(lat, lon)
-                .stream()
-                .map(locationMapper::toDto)
-                .toList();
+                .stream().map(locationMapper::toDto).toList();
     }
 
     @Override
@@ -89,9 +81,7 @@ public class LocationServiceImpl implements LocationService {
             throw new NotFoundException("Локация не найдена с id: " + locationId);
         }
         return locationRepository.findEventsInLocation(locationId)
-                .stream()
-                .map(eventMapper::toEventShortDto)
-                .toList();
+                .stream().map(eventMapper::toEventShortDto).toList();
     }
 
     @Override
@@ -101,8 +91,8 @@ public class LocationServiceImpl implements LocationService {
         if (lat < -90.0 || lat > 90.0) throw new ValidationException("Широта должна быть от -90 до 90");
         if (lon < -180.0 || lon > 180.0) throw new ValidationException("Долгота должна быть от -180 до 180");
 
-        List<Object[]> results = locationRepository.findEventsWithDistanceWithinRadius(lat, lon, radius);
-        return results.stream().map(this::mapToEventDistanceDto).toList();
+        return locationRepository.findEventsWithDistanceWithinRadius(lat, lon, radius)
+                .stream().map(this::mapToEventDistanceDto).toList();
     }
 
     @Override
@@ -117,9 +107,7 @@ public class LocationServiceImpl implements LocationService {
         }
 
         Double distance = locationRepository.findDistanceToEvent(eventId, lat, lon);
-        if (distance == null) {
-            throw new NotFoundException("Не удалось вычислить расстояние до события с id=" + eventId);
-        }
+        if (distance == null) throw new NotFoundException("Не удалось вычислить расстояние до события с id=" + eventId);
 
         return DistanceDto.builder().eventId(eventId).distance(distance).build();
     }
@@ -159,9 +147,8 @@ public class LocationServiceImpl implements LocationService {
         if (dto.getDescription() != null && dto.getDescription().length() > 1000) {
             throw new ValidationException("Описание локации не должно превышать 1000 символов");
         }
-        if (dto.getLocationType() != null) {
-            validateLocationType(dto.getLocationType());
-        }
+        if (dto.getLocationType() != null) validateLocationType(dto.getLocationType());
+
         if (dto.getLat() != null || dto.getLon() != null) {
             if (dto.getLat() == null || dto.getLon() == null) throw new ValidationException("Координаты lat и lon должны быть указаны вместе");
             if (dto.getLat() < -90.0 || dto.getLat() > 90.0) throw new ValidationException("Широта должна быть от -90 до 90");
