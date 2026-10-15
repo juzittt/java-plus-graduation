@@ -27,15 +27,28 @@ public interface LocationRepository extends JpaRepository<Location, Long> {
         FROM events e
         JOIN locations l ON e.location_id = l.id
         WHERE e.state = 'PUBLISHED'
+          AND (:lat IS NOT NULL)
+          AND (:lon IS NOT NULL)
+          AND (:radius IS NOT NULL)
         ORDER BY e.event_date
         """, nativeQuery = true)
     List<Object[]> findEventsWithDistanceWithinRadius(
-            @Param("lat") double lat, @Param("lon") double lon, @Param("radius") double radius);
+            @Param("lat") double lat,
+            @Param("lon") double lon,
+            @Param("radius") double radius
+    );
 
     @Query(value = """
-        SELECT 0.0 FROM events e
+        SELECT 0.0 
+        FROM events e
         JOIN locations l ON e.location_id = l.id
         WHERE e.id = :eventId
+          AND (:lat IS NOT NULL)
+          AND (:lon IS NOT NULL)
         """, nativeQuery = true)
-    Double findDistanceToEvent(@Param("eventId") Long eventId, @Param("lat") double lat, @Param("lon") double lon);
+    Double findDistanceToEvent(
+            @Param("eventId") Long eventId,
+            @Param("lat") double lat,
+            @Param("lon") double lon
+    );
 }
