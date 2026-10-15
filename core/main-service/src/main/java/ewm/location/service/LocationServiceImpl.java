@@ -62,22 +62,7 @@ public class LocationServiceImpl implements LocationService {
 
         Location existing = getLocationOrThrow(id);
 
-        if (dto.getName() != null) {
-            existing.setName(dto.getName());
-        }
-        if (dto.getDescription() != null) {
-            existing.setDescription(dto.getDescription());
-        }
-        if (dto.getLocationType() != null) {
-            existing.setLocationType(LocationType.valueOf(dto.getLocationType().toUpperCase()));
-        }
-        if (dto.getLat() != null && dto.getLon() != null) {
-            existing.setLat(dto.getLat());
-            existing.setLon(dto.getLon());
-        }
-        if (dto.getRadiusMeters() != null) {
-            existing.setRadiusMeters(dto.getRadiusMeters());
-        }
+        locationMapper.updateEntityFromDto(dto, existing);
 
         Location updated = locationRepository.save(existing);
         return locationMapper.toDto(updated);
