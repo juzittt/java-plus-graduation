@@ -13,6 +13,10 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/admin/users,/admin/users/**
+        - id: category-service
+          uri: lb://category-service
+          predicates:
+            - Path=/admin/categories,/admin/categories/**,/categories,/categories/**
         - id: main-service
           uri: lb://main-service
           predicates:
