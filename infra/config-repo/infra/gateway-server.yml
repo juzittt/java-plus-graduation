@@ -4,16 +4,24 @@ server:
 spring:
   cloud:
     gateway:
+      handler-mapping-order: 10
       discovery:
         locator:
           enabled: false
       routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/admin/users,/admin/users/**
         - id: main-service
           uri: lb://main-service
           predicates:
             - Path=/**
 
 management:
+  endpoint:
+    gateway:
+      enabled: true
   endpoints:
     web:
       exposure:

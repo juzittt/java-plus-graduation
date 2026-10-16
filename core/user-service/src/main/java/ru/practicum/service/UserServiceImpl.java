@@ -1,18 +1,20 @@
-package ewm.users.service;
+package ru.practicum.service;
 
-import ewm.exception.ConflictException;
-import ewm.exception.NotFoundException;
-import ewm.users.dto.NewUserRequest;
-import ewm.users.dto.UserDto;
-import ewm.users.mapper.UserMapper;
-import ewm.users.model.User;
-import ewm.users.repository.UserRepository;
+import ru.practicum.dto.NewUserRequest;
+import ru.practicum.dto.UserDto;
+import ru.practicum.dto.UserShortDto;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
+import ru.practicum.mapper.UserMapper;
+import ru.practicum.model.User;
+import ru.practicum.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,5 +52,21 @@ public class UserServiceImpl implements UserService {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
         userRepository.deleteById(userId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserShortDto getUserShortDtoById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User с id=" + userId + " не найден"));
+        return UserShortDto.builder().id(user.getId()).name(user.getName()).build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserShortDto> getUsersShortDtoByIds(List<Long> ids) {
+        return userRepository.findAllById(ids).stream()
+                .map(user -> UserShortDto.builder().id(user.getId()).name(user.getName()).build())
+                .collect(Collectors.toList());
     }
 }

@@ -1,8 +1,9 @@
-package ewm.users.controller;
+package ru.practicum.controller;
 
-import ewm.users.dto.NewUserRequest;
-import ewm.users.dto.UserDto;
-import ewm.users.service.UserService;
+import ru.practicum.dto.NewUserRequest;
+import ru.practicum.dto.UserDto;
+import ru.practicum.dto.UserShortDto;
+import ru.practicum.service.UserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +44,15 @@ public class AdminUserController {
         log.info("DELETE /admin/users/{}", userId);
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserShortDto> getUserById(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserShortDtoById(userId));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UserShortDto>> getUsersByIds(@RequestParam List<Long> ids) {
+        return ResponseEntity.ok(userService.getUsersShortDtoByIds(ids));
     }
 }

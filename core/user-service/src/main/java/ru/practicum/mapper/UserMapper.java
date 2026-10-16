@@ -1,10 +1,10 @@
-package ewm.users.mapper;
+package ru.practicum.mapper;
 
 import org.mapstruct.Mapper;
-import ewm.users.dto.NewUserRequest;
-import ewm.users.dto.UserDto;
-import ewm.users.dto.UserShortDto;
-import ewm.users.model.User;
+import ru.practicum.dto.NewUserRequest;
+import ru.practicum.dto.UserDto;
+import ru.practicum.dto.UserShortDto;
+import ru.practicum.model.User;
 
 import java.util.List;
 
