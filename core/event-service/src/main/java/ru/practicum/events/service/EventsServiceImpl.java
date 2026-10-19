@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.CategoryClient;
+import ru.practicum.client.RequestClient;
 import ru.practicum.client.StatsClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.events.dto.*;
@@ -45,6 +46,7 @@ public class EventsServiceImpl implements EventsService {
     private final UserClient userClient;
     private final CategoryClient categoryClient;
     private final ObjectMapper objectMapper;
+    private final RequestClient requestClient;
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
@@ -67,16 +69,49 @@ public class EventsServiceImpl implements EventsService {
                 .and(EventSpecification.hasText(params.getText()))
                 .and(EventSpecification.hasCategories(params.getCategories()))
                 .and(EventSpecification.hasPaid(params.getPaid()))
-                // TODO: Вернуть фильтрацию onlyAvailable после реализации request-service и добавления метода в EventSpecification
-                // .and(EventSpecification.onlyAvailable(params.getOnlyAvailable()))
                 .and(EventSpecification.dateAfter(startDate))
                 .and(EventSpecification.dateBefore(endDate));
+
+        List<Long> availableEventIds = null;
+        if (Boolean.TRUE.equals(params.getOnlyAvailable())) {
+            List<Event> candidateEvents = eventsRepository.findAll(spec);
+            availableEventIds = filterAvailableEvents(candidateEvents);
+        }
+
+        spec = spec.and(EventSpecification.onlyAvailable(params.getOnlyAvailable(), availableEventIds));
 
         return switch (params.getSort()) {
             case VIEWS -> getEventsSortedByViews(spec, params);
             case EVENT_DATE -> getEventsSortedByDate(spec, params);
             case null -> getEventsSortedByDate(spec, params);
         };
+    }
+
+    private List<Long> filterAvailableEvents(List<Event> events) {
+        if (events.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> eventIds = events.stream().map(Event::getId).toList();
+
+        Map<Long, Long> confirmedCounts = requestClient.getConfirmedCounts(eventIds).stream()
+                .collect(Collectors.toMap(
+                        EventRequestsCountDto::eventId,
+                        EventRequestsCountDto::confirmedRequests,
+                        (a, b) -> a
+                ));
+
+        return events.stream()
+                .filter(event -> {
+                    Integer limit = event.getParticipantLimit();
+                    if (limit == null || limit == 0) {
+                        return true;
+                    }
+                    long confirmed = confirmedCounts.getOrDefault(event.getId(), 0L);
+                    return confirmed < limit;
+                })
+                .map(Event::getId)
+                .toList();
     }
 
     @Override
@@ -313,9 +348,15 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
-        // TODO: После создания request-service заменить на вызов RequestClient.getConfirmedCounts(eventIds)
-        // Временно возвращаем 0 для всех событий, чтобы код компилировался и работал
-        return eventIds.stream().collect(Collectors.toMap(Function.identity(), id -> 0L));
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return requestClient.getConfirmedCounts(eventIds).stream()
+                .collect(Collectors.toMap(
+                        EventRequestsCountDto::eventId,
+                        EventRequestsCountDto::confirmedRequests
+                ));
     }
 
     private void enrichEventWithStats(EventFullDto dto) {

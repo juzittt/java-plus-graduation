@@ -68,26 +68,19 @@ public class EventSpecification {
         };
     }
 
-    /*public static Specification<Event> onlyAvailable(Boolean onlyAvailable) {
+    public static Specification<Event> onlyAvailable(Boolean onlyAvailable, List<Long> availableEventIds) {
         return (root, query, cb) -> {
             if (onlyAvailable == null || !onlyAvailable) {
                 return cb.conjunction();
             }
 
-            Subquery<Long> subquery = query.subquery(Long.class);
-            Root<ParticipationRequest> requestRoot = subquery.from(ParticipationRequest.class);
-            subquery.select(cb.count(requestRoot))
-                    .where(
-                            cb.equal(requestRoot.get("event"), root),
-                            cb.equal(requestRoot.get("status"), ParticipationStatus.CONFIRMED)
-                    );
+            if (availableEventIds == null || availableEventIds.isEmpty()) {
+                return cb.disjunction();
+            }
 
-            return cb.or(
-                    cb.equal(root.get("participantLimit"), 0),
-                    cb.lessThan(subquery, root.get("participantLimit"))
-            );
+            return root.get("id").in(availableEventIds);
         };
-    }*/
+    }
 
     public static Specification<Event> dateAfter(LocalDateTime start) {
 
