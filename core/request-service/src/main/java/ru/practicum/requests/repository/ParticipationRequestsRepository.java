@@ -3,12 +3,14 @@ package ru.practicum.requests.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import ru.practicum.requests.dto.EventRequestsCountDto;
 import ru.practicum.requests.model.ParticipationRequest;
 import ru.practicum.requests.model.ParticipationStatus;
 
 import java.util.List;
 
+@Repository
 public interface ParticipationRequestsRepository extends JpaRepository<ParticipationRequest, Long> {
 
     List<ParticipationRequest> findByRequesterId(Long requesterId);
