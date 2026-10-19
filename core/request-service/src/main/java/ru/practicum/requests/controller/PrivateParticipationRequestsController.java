@@ -1,7 +1,7 @@
-package ewm.participationRequest.controller;
+package ru.practicum.requests.controller;
 
-import ewm.participationRequest.dto.ParticipationRequestDto;
-import ewm.participationRequest.service.ParticipationRequestService;
+import ru.practicum.requests.dto.ParticipationRequestDto;
+import ru.practicum.requests.service.RequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/users/{userId}/requests")
 @RequiredArgsConstructor
 public class PrivateParticipationRequestsController {
-    private final ParticipationRequestService requestService;
+    private final RequestService requestService;
 
     @GetMapping
     public ResponseEntity<List<ParticipationRequestDto>> getUserRequests(@PathVariable Long userId) {

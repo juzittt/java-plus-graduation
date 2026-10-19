@@ -1,6 +1,6 @@
-package ewm.participationRequest.dto;
+package ru.practicum.requests.dto;
 
-import ewm.participationRequest.model.ParticipationStatus;
+import ru.practicum.requests.model.ParticipationStatus;
 import lombok.Data;
 
 import java.util.List;

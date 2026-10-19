@@ -1,7 +1,5 @@
-package ewm.participationRequest.model;
+package ru.practicum.requests.model;
 
-import ewm.events.model.Event;
-import ewm.users.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,19 +11,18 @@ import java.time.LocalDateTime;
 @Table(name = "participation_requests")
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ParticipationRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "requester_id", nullable = false)
-    private User requester;
+    private Long requesterId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id", nullable = false)
-    private Event event;
+    private Long eventId;
 
     @Column(name = "created", nullable = false)
     private LocalDateTime created;
