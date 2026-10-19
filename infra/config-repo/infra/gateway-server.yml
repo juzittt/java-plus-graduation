@@ -25,6 +25,10 @@ spring:
           uri: lb://request-service
           predicates:
             - Path=/users/{userId}/requests,/users/{userId}/requests/**,/internal/requests/**
+        - id: compilation-service
+          uri: lb://compilation-service
+          predicates:
+            - Path=/admin/compilations,/admin/compilations/**,/compilations,/compilations/**
         - id: main-service
           uri: lb://main-service
           predicates:

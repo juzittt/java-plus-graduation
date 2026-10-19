@@ -411,7 +411,7 @@ public class EventsServiceImpl implements EventsService {
         });
     }
 
-    private void enrichShortWithUsersAndCategories(List<EventShortDto> dtos) {
+    public void enrichShortWithUsersAndCategories(List<EventShortDto> dtos) {
         Set<Long> userIds = dtos.stream().map(dto -> dto.getInitiator().getId()).collect(Collectors.toSet());
         Set<Long> categoryIds = dtos.stream().map(dto -> dto.getCategory().getId()).collect(Collectors.toSet());
 
