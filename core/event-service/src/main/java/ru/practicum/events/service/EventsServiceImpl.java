@@ -303,6 +303,40 @@ public class EventsServiceImpl implements EventsService {
         return result;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public EventStatusDto getEventStatus(Long id) {
+        Event event = eventsRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Event с id=" + id + " не найден"));
+
+        return EventStatusDto.builder()
+                .id(event.getId())
+                .state(event.getState().name())
+                .participantLimit(event.getParticipantLimit())
+                .requestModeration(event.getRequestModeration())
+                .initiatorId(event.getInitiatorId())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventShortDto> getShortDtosByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Event> events = eventsRepository.findAllById(ids);
+        List<EventShortDto> dtos = eventMapper.toEventShortDtoList(events);
+        enrichShortWithUsersAndCategories(dtos);
+        return dtos;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByCategoryId(Long categoryId) {
+        return eventsRepository.existsByCategoryId(categoryId);
+    }
+
     private void sendHitToStats(String uri, String ip) {
         statsClient.saveHit(EndpointHitDto.builder()
                 .app(APP_NAME)

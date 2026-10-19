@@ -1,18 +1,20 @@
 package ru.practicum.categories.service;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.categories.client.EventClient;
 import ru.practicum.categories.dto.CategoryDto;
 import ru.practicum.categories.dto.NewCategoryDto;
 import ru.practicum.categories.mapper.CategoryMapper;
 import ru.practicum.categories.model.Category;
 import ru.practicum.categories.repository.CategoryRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,8 +23,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
-    // TODO: После создания event-service добавить Feign-клиент EventClient
-    // private final EventClient eventClient;
+    private final EventClient eventClient;
 
     @Override
     public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
@@ -54,10 +55,9 @@ public class CategoryServiceImpl implements CategoryService {
             throw new NotFoundException("Категория с id=" + catId + " не найдена");
         }
 
-        // TODO: После создания event-service реализовать проверку через Feign-клиент:
-        // if (eventClient.existsByCategoryId(catId)) {
-        //     throw new ConflictException("Категория с id=" + catId + " используется в событиях.");
-        // }
+        if (eventClient.existsByCategoryId(catId)) {
+            throw new ConflictException("Категория с id=" + catId + " используется в событиях.");
+        }
 
         categoryRepository.deleteById(catId);
     }
@@ -66,10 +66,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryDto> getCategories(Integer from, Integer size) {
         PageRequest pageRequest = PageRequest.of(from / size, size);
-        return categoryRepository.findAll(pageRequest)
-                .stream()
+        return categoryRepository.findAll(pageRequest).stream()
                 .map(categoryMapper::toCategoryDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -78,5 +77,17 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Категория с id=" + catId + " не найдена"));
         return categoryMapper.toCategoryDto(category);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryDto> getCategoriesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return categoryRepository.findAllById(ids).stream()
+                .map(categoryMapper::toCategoryDto)
+                .collect(Collectors.toList());
     }
 }

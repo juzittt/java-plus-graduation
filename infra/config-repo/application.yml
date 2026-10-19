@@ -1,61 +1,32 @@
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
 resilience4j:
   circuitbreaker:
     instances:
-      eventService:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true
-
       requestService:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true
-
-      userService:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true
-
-      categoryService:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true
-
-      compilationService:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10000
-        permittedNumberOfCallsInHalfOpenState: 3
-        registerHealthIndicator: true
-
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+      eventService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
   retry:
     instances:
-      eventService:
-        maxAttempts: 3
-        waitDuration: 1000
-        retryExceptions:
-          - java.io.IOException
-          - java.util.concurrent.TimeoutException
       requestService:
-        maxAttempts: 3
-        waitDuration: 1000
-      userService:
-        maxAttempts: 3
-        waitDuration: 1000
-      categoryService:
-        maxAttempts: 3
-        waitDuration: 1000
-      compilationService:
-        maxAttempts: 3
-        waitDuration: 1000
+        max-attempts: 3
+        wait-duration: 500ms
+      eventService:
+        max-attempts: 3
+        wait-duration: 500ms
 
 logging:
   level:

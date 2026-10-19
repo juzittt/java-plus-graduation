@@ -1,11 +1,16 @@
 package ru.practicum.events.service;
 
-import ru.practicum.events.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
+import ru.practicum.events.dto.EventFullDto;
+import ru.practicum.events.dto.EventShortDto;
+import ru.practicum.events.dto.EventStatusDto;
+import ru.practicum.events.dto.NewEventDto;
+import ru.practicum.events.dto.UpdateEventAdminRequest;
+import ru.practicum.events.dto.UpdateEventUserRequest;
 import ru.practicum.events.dto.params.AdminEventParams;
 import ru.practicum.events.dto.params.PaginationParams;
 import ru.practicum.events.dto.params.PublicEventParams;
 import ru.practicum.events.dto.params.UserEventPathParams;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 
@@ -26,4 +31,10 @@ public interface EventsService {
     List<EventFullDto> getAdminEvents(AdminEventParams params);
 
     EventFullDto updateAdminEvent(Long eventId, UpdateEventAdminRequest request);
+
+    EventStatusDto getEventStatus(Long id);
+
+    List<EventShortDto> getShortDtosByIds(List<Long> ids);
+
+    boolean existsByCategoryId(Long categoryId);
 }

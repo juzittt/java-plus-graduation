@@ -1,17 +1,17 @@
 package ru.practicum.users.service;
 
-import ru.practicum.users.dto.NewUserRequest;
-import ru.practicum.users.dto.UserDto;
-import ru.practicum.users.dto.UserShortDto;
-import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.NotFoundException;
-import ru.practicum.users.mapper.UserMapper;
-import ru.practicum.users.model.User;
-import ru.practicum.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
+import ru.practicum.users.dto.NewUserRequest;
+import ru.practicum.users.dto.UserDto;
+import ru.practicum.users.dto.UserShortDto;
+import ru.practicum.users.mapper.UserMapper;
+import ru.practicum.users.model.User;
+import ru.practicum.users.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto createUser(NewUserRequest newUserRequest) {
         if (userRepository.existsByEmail(newUserRequest.getEmail())) {
-            throw new ConflictException("Пользователь с email=" + newUserRequest.getEmail()+ " уже существует");
+            throw new ConflictException("Пользователь с email=" + newUserRequest.getEmail() + " уже существует");
         }
         User user = userMapper.toUser(newUserRequest);
         user = userRepository.save(user);
@@ -41,9 +41,8 @@ public class UserServiceImpl implements UserService {
 
         if (ids == null || ids.isEmpty()) {
             return userMapper.toUserDtoList(userRepository.findAll(pageRequest).getContent());
-        } else {
-            return userMapper.toUserDtoList(userRepository.findByIdIn(ids, pageRequest));
         }
+        return userMapper.toUserDtoList(userRepository.findByIdIn(ids, pageRequest));
     }
 
     @Override
@@ -58,15 +57,26 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserShortDto getUserShortDtoById(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User с id=" + userId + " не найден"));
-        return UserShortDto.builder().id(user.getId()).name(user.getName()).build();
+                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
+
+        return UserShortDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserShortDto> getUsersShortDtoByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
         return userRepository.findAllById(ids).stream()
-                .map(user -> UserShortDto.builder().id(user.getId()).name(user.getName()).build())
+                .map(user -> UserShortDto.builder()
+                        .id(user.getId())
+                        .name(user.getName())
+                        .build())
                 .collect(Collectors.toList());
     }
 }

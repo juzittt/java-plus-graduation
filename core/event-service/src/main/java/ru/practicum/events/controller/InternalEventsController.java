@@ -1,14 +1,14 @@
 package ru.practicum.events.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.events.dto.EventShortDto;
 import ru.practicum.events.dto.EventStatusDto;
-import ru.practicum.events.mapper.EventMapper;
-import ru.practicum.events.model.Event;
-import ru.practicum.events.repository.EventsRepository;
-import ru.practicum.events.service.EventsServiceImpl;
-import ru.practicum.exception.NotFoundException;
+import ru.practicum.events.service.EventsService;
 
 import java.util.List;
 
@@ -17,34 +17,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InternalEventsController {
 
-    private final EventsRepository eventsRepository;
-    private final EventMapper eventMapper;
-    private final EventsServiceImpl eventsService;
+    private final EventsService eventsService;
 
     @GetMapping("/{id}/status")
     public EventStatusDto getEventStatus(@PathVariable Long id) {
-        Event event = eventsRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Event с id=" + id + " не найден"));
-
-        return EventStatusDto.builder()
-                .id(event.getId())
-                .state(event.getState().name())
-                .participantLimit(event.getParticipantLimit())
-                .requestModeration(event.getRequestModeration())
-                .initiatorId(event.getInitiatorId())
-                .build();
+        return eventsService.getEventStatus(id);
     }
 
     @GetMapping("/by-ids")
-    public List<EventShortDto> getEventsByIds(@RequestParam List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return List.of();
-        }
+    public List<EventShortDto> getEventsByIds(@RequestParam("ids") List<Long> ids) {
+        return eventsService.getShortDtosByIds(ids);
+    }
 
-        List<Event> events = eventsRepository.findAllById(ids);
-        List<EventShortDto> dtos = eventMapper.toEventShortDtoList(events);
-        eventsService.enrichShortWithUsersAndCategories(dtos);
-
-        return dtos;
+    @GetMapping("/exists-by-category/{categoryId}")
+    public boolean existsByCategoryId(@PathVariable Long categoryId) {
+        return eventsService.existsByCategoryId(categoryId);
     }
 }
