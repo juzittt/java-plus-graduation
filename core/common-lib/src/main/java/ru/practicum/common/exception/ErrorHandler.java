@@ -1,4 +1,4 @@
-package ru.practicum.exception;
+package ru.practicum.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;

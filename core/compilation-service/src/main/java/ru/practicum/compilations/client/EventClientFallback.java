@@ -1,7 +1,7 @@
 package ru.practicum.compilations.client;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.compilations.dto.EventShortDto;
+import ru.practicum.common.dto.EventShortDto;
 
 import java.util.List;
 

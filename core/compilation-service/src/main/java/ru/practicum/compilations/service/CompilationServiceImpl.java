@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.compilations.client.EventClient;
 import ru.practicum.compilations.dto.CompilationDto;
-import ru.practicum.compilations.dto.EventShortDto;
+import ru.practicum.common.dto.EventShortDto;
 import ru.practicum.compilations.dto.NewCompilationDto;
 import ru.practicum.compilations.dto.UpdateCompilationRequest;
 import ru.practicum.compilations.mapper.CompilationMapper;
 import ru.practicum.compilations.model.Compilation;
 import ru.practicum.compilations.repository.CompilationRepository;
-import ru.practicum.exception.NotFoundException;
+import ru.practicum.common.exception.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.HashSet;

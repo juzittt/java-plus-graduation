@@ -1,14 +1,14 @@
-package ru.practicum.compilations.client.config;
+package ru.practicum.common.feign;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import ru.practicum.exception.ApiError;
-import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.NotFoundException;
-import ru.practicum.exception.ValidationException;
+import ru.practicum.common.exception.ApiError;
+import ru.practicum.common.exception.ConflictException;
+import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.common.exception.ValidationException;
 
 import java.io.InputStream;
 

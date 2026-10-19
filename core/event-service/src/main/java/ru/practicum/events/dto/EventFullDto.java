@@ -1,6 +1,8 @@
 package ru.practicum.events.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ru.practicum.common.dto.CategoryDto;
+import ru.practicum.common.dto.UserShortDto;
 import ru.practicum.events.model.State;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -2,7 +2,7 @@ package ru.practicum.users.service;
 
 import ru.practicum.users.dto.NewUserRequest;
 import ru.practicum.users.dto.UserDto;
-import ru.practicum.users.dto.UserShortDto;
+import ru.practicum.common.dto.UserShortDto;
 
 import java.util.List;
 

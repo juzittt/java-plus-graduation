@@ -6,19 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
-/*
-Тут прописываем спецификацию для наших фильтров, для пояснения скажу:
-root - по сути тоже самое, что и FROM, т.е. с помощью него мы получаем поля
-query - представляет сам каркас SQL-запроса
-cb или же CriteriaBuilder - используется для созданий выраженией, условий, оператов и функций
 
-Каждая Specification возвращает Predicate (условие),
-которое затем добавляется в итоговый SQL-запрос.
-
-далее мы в EventsServiceImpl используем конструктор для этой самой спецификации
-
-т.е. вместо JPQL запросов мы прописываем запросы тут и вместо огромного кода, просто создаем конструктор
-*/
 public class EventSpecification {
 
     public static Specification<Event> published() {

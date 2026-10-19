@@ -1,4 +1,4 @@
-package ru.practicum.compilations.dto;
+package ru.practicum.common.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

@@ -1,7 +1,7 @@
 package ru.practicum.events.controller;
 
 import ru.practicum.events.dto.EventFullDto;
-import ru.practicum.events.dto.EventShortDto;
+import ru.practicum.common.dto.EventShortDto;
 import ru.practicum.events.dto.NewEventDto;
 import ru.practicum.events.dto.UpdateEventUserRequest;
 import ru.practicum.events.dto.params.PaginationParams;

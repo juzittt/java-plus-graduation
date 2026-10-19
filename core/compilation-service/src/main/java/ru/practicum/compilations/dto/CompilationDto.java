@@ -1,6 +1,7 @@
 package ru.practicum.compilations.dto;
 
 import lombok.Data;
+import ru.practicum.common.dto.EventShortDto;
 
 import java.util.List;
 
