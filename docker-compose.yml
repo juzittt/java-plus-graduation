@@ -1,71 +1,86 @@
 services:
-  stats-server:
+
+  users-db:
+    image: postgres:16.1
+    container_name: ewm-users-db
     ports:
-      - "9090:9090"
-    build: ./stats/stats-server
-    image: stats-server
-    container_name: stats-server
-    depends_on:
-      - stats-db
+      - "6503:5432"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/stats
-      - SPRING_DATASOURCE_USERNAME=dbuser
-      - SPRING_DATASOURCE_PASSWORD=12345
+      POSTGRES_DB: ewm_users
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - app-network
+
+  categories-db:
+    image: postgres:16.1
+    container_name: ewm-categories-db
+    ports:
+      - "6504:5432"
+    environment:
+      POSTGRES_DB: ewm_categories
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - app-network
+
+  events-db:
+    image: postgres:16.1
+    container_name: ewm-events-db
+    ports:
+      - "6505:5432"
+    environment:
+      POSTGRES_DB: ewm_events
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - app-network
+
+  requests-db:
+    image: postgres:16.1
+    container_name: ewm-requests-db
+    ports:
+      - "6506:5432"
+    environment:
+      POSTGRES_DB: ewm_requests
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - app-network
+
+  compilations-db:
+    image: postgres:16.1
+    container_name: ewm-compilations-db
+    ports:
+      - "6507:5432"
+    environment:
+      POSTGRES_DB: ewm_compilations
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+    networks:
+      - app-network
+
+  ewm-main-db:
+    image: postgres:16.1
+    container_name: ewm-main-db
+    ports:
+      - "6502:5432"
+    environment:
+      POSTGRES_DB: ewm
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     networks:
       - app-network
 
   stats-db:
     image: postgres:16.1
-    container_name: stats-db
+    container_name: ewm-stats-db
     ports:
       - "6501:5432"
     environment:
-      - POSTGRES_PASSWORD=12345
-      - POSTGRES_USER=dbuser
-      - POSTGRES_DB=stats
-    volumes:
-      - ./stats/stats-server/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    healthcheck:
-      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
-      interval: 5s
-      retries: 10
-    networks:
-      - app-network
-
-  ewm-service:
-    ports:
-      - "8080:8080"
-    build: ./main-service
-    image: main-service
-    container_name: main-service
-    depends_on:
-      - ewm-db
-      - stats-server
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm
-      - SPRING_DATASOURCE_USERNAME=dbuser
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - STATS_SERVER_URL=http://stats-server:9090
-    networks:
-      - app-network
-
-  ewm-db:
-    image: postgres:16.1
-    container_name: ewm-db
-    ports:
-      - "6502:5432"
-    environment:
-      - POSTGRES_PASSWORD=12345
-      - POSTGRES_USER=dbuser
-      - POSTGRES_DB=ewm
-    volumes:
-      - ./main-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    healthcheck:
-      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
-      timeout: 5s
-      interval: 5s
-      retries: 10
+      POSTGRES_DB: stats
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
     networks:
       - app-network
 

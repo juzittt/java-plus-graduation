@@ -1,0 +1,63 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      eventService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+
+      requestService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+
+      userService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+
+      categoryService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+
+      compilationService:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
+
+  retry:
+    instances:
+      eventService:
+        maxAttempts: 3
+        waitDuration: 1000
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+      requestService:
+        maxAttempts: 3
+        waitDuration: 1000
+      userService:
+        maxAttempts: 3
+        waitDuration: 1000
+      categoryService:
+        maxAttempts: 3
+        waitDuration: 1000
+      compilationService:
+        maxAttempts: 3
+        waitDuration: 1000
+
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+    org.springframework.cloud.openfeign: DEBUG

@@ -16,7 +16,7 @@ spring:
       mode: always
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:6502/ewm
+    url: jdbc:postgresql://localhost:6505/ewm_events
     username: dbuser
     password: 12345
 
