@@ -16,22 +16,16 @@ import java.io.InputStream;
 public class FeignErrorDecoderConfig {
 
     @Bean
-    public ErrorDecoder errorDecoder() {
-        ObjectMapper objectMapper = new ObjectMapper();
+    public ErrorDecoder errorDecoder(ObjectMapper objectMapper) {
         ErrorDecoder defaultDecoder = new ErrorDecoder.Default();
 
         return (methodKey, response) -> {
             String message = readMessage(objectMapper, response);
-
             switch (response.status()) {
-                case 404:
-                    return new NotFoundException(message);
-                case 409:
-                    return new ConflictException(message);
-                case 400:
-                    return new ValidationException(message);
-                default:
-                    return defaultDecoder.decode(methodKey, response);
+                case 404: return new NotFoundException(message);
+                case 409: return new ConflictException(message);
+                case 400: return new ValidationException(message);
+                default:  return defaultDecoder.decode(methodKey, response);
             }
         };
     }
@@ -42,9 +36,7 @@ public class FeignErrorDecoderConfig {
         }
         try (InputStream is = response.body().asInputStream()) {
             ApiError apiError = objectMapper.readValue(is, ApiError.class);
-            return apiError.getMessage() != null
-                    ? apiError.getMessage()
-                    : "Remote error: " + response.status();
+            return apiError.getMessage() != null ? apiError.getMessage() : "Remote error: " + response.status();
         } catch (Exception e) {
             return "Remote error: " + response.status();
         }

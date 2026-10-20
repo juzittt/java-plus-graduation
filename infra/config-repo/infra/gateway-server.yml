@@ -20,7 +20,7 @@ spring:
         - id: request-service
           uri: lb://request-service
           predicates:
-            - Path=/users/{userId}/requests,/users/{userId}/requests/**,/internal/requests/**
+            - Path=/users/{userId}/requests,/users/{userId}/requests/**,/users/{userId}/events/{eventId}/requests,/users/{userId}/events/{eventId}/requests/**,/internal/requests/**
         - id: event-service
           uri: lb://event-service
           predicates:
@@ -29,10 +29,10 @@ spring:
           uri: lb://compilation-service
           predicates:
             - Path=/admin/compilations,/admin/compilations/**,/compilations,/compilations/**
-        - id: main-service
-          uri: lb://main-service
+        - id: stats-server
+          uri: lb://stats-server
           predicates:
-            - Path=/**
+            - Path=/hit,/hit/**,/stats,/stats/**
 
 management:
   endpoint:

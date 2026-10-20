@@ -353,47 +353,54 @@ public class EventsServiceImpl implements EventsService {
         if (eventIds.isEmpty()) {
             return Collections.emptyMap();
         }
+        try {
+            List<String> uris = eventIds.stream().map(id -> "/events/" + id).toList();
 
-        List<String> uris = eventIds.stream().map(id -> "/events/" + id).toList();
+            ResponseEntity<Object> response = statsClient.getStats(
+                    LocalDateTime.of(2000, 1, 1, 0, 0).format(FORMATTER),
+                    LocalDateTime.now().format(FORMATTER),
+                    uris,
+                    true
+            );
 
-        ResponseEntity<Object> response = statsClient.getStats(
-                LocalDateTime.of(2000, 1, 1, 0, 0),
-                LocalDateTime.now(),
-                uris,
-                true
-        );
+            if (response.getBody() == null) {
+                return Collections.emptyMap();
+            }
 
-        if (response.getBody() == null) {
+            List<ViewStatsDto> stats = objectMapper.convertValue(
+                    response.getBody(),
+                    new TypeReference<List<ViewStatsDto>>() {}
+            );
+
+            if (stats == null || stats.isEmpty()) {
+                return Collections.emptyMap();
+            }
+
+            return stats.stream()
+                    .collect(Collectors.toMap(
+                            stat -> Long.parseLong(stat.getUri().substring(stat.getUri().lastIndexOf('/') + 1)),
+                            ViewStatsDto::getHits,
+                            (existing, replacement) -> existing
+                    ));
+        } catch (Exception e) {
             return Collections.emptyMap();
         }
-
-        List<ViewStatsDto> stats = objectMapper.convertValue(
-                response.getBody(),
-                new TypeReference<List<ViewStatsDto>>() {}
-        );
-
-        if (stats == null || stats.isEmpty()) {
-            return Collections.emptyMap();
-        }
-
-        return stats.stream()
-                .collect(Collectors.toMap(
-                        stat -> Long.parseLong(stat.getUri().substring(stat.getUri().lastIndexOf('/') + 1)),
-                        ViewStatsDto::getHits,
-                        (existing, replacement) -> existing
-                ));
     }
 
     private Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
         if (eventIds == null || eventIds.isEmpty()) {
             return Collections.emptyMap();
         }
-
-        return requestClient.getConfirmedCounts(eventIds).stream()
-                .collect(Collectors.toMap(
-                        EventRequestsCountDto::eventId,
-                        EventRequestsCountDto::confirmedRequests
-                ));
+        try {
+            return requestClient.getConfirmedCounts(eventIds).stream()
+                    .collect(Collectors.toMap(
+                            EventRequestsCountDto::eventId,
+                            EventRequestsCountDto::confirmedRequests,
+                            (a, b) -> a
+                    ));
+        } catch (Exception e) {
+            return Collections.emptyMap();
+        }
     }
 
     private void enrichEventWithStats(EventFullDto dto) {

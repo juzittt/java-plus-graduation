@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.practicum.events.dto.EndpointHitDto;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @FeignClient(name = "stats-server")
@@ -18,10 +17,8 @@ public interface StatsClient {
     ResponseEntity<Object> saveHit(@RequestBody EndpointHitDto hitDto);
 
     @GetMapping("/stats")
-    ResponseEntity<Object> getStats(
-            @RequestParam("start") LocalDateTime start,
-            @RequestParam("end") LocalDateTime end,
-            @RequestParam(value = "uris", required = false) List<String> uris,
-            @RequestParam(value = "unique", defaultValue = "false") Boolean unique
-    );
+    ResponseEntity<Object> getStats(@RequestParam("start") String start,
+                                    @RequestParam("end") String end,
+                                    @RequestParam(value = "uris", required = false) List<String> uris,
+                                    @RequestParam("unique") Boolean unique);
 }
