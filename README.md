@@ -83,7 +83,7 @@
 
 ## Стек технологий
 - Java 21
-- Spring Boot 3.3.x
+- Spring Boot 3.3.0
 - Spring Cloud: Eureka Server/Client, Config Server, API Gateway, OpenFeign, LoadBalancer
 - Resilience4j: Circuit Breaker и Retry
 - PostgreSQL
