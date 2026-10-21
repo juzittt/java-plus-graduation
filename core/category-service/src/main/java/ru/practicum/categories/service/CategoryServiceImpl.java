@@ -1,0 +1,93 @@
+package ru.practicum.categories.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.categories.client.EventClient;
+import ru.practicum.categories.dto.CategoryDto;
+import ru.practicum.categories.dto.NewCategoryDto;
+import ru.practicum.categories.mapper.CategoryMapper;
+import ru.practicum.categories.model.Category;
+import ru.practicum.categories.repository.CategoryRepository;
+import ru.practicum.common.exception.ConflictException;
+import ru.practicum.common.exception.NotFoundException;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class CategoryServiceImpl implements CategoryService {
+
+    private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
+    private final EventClient eventClient;
+
+    @Override
+    public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
+        if (categoryRepository.existsByName(newCategoryDto.getName())) {
+            throw new ConflictException("Категория с таким названием уже существует");
+        }
+        Category category = categoryMapper.toCategory(newCategoryDto);
+        category = categoryRepository.save(category);
+        return categoryMapper.toCategoryDto(category);
+    }
+
+    @Override
+    public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
+        Category category = categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id=" + catId + " не найдена"));
+
+        if (categoryRepository.existsByNameAndIdNot(categoryDto.getName(), catId)) {
+            throw new ConflictException("Категория с таким названием уже существует");
+        }
+
+        category.setName(categoryDto.getName());
+        category = categoryRepository.save(category);
+        return categoryMapper.toCategoryDto(category);
+    }
+
+    @Override
+    public void deleteCategory(Long catId) {
+        if (!categoryRepository.existsById(catId)) {
+            throw new NotFoundException("Категория с id=" + catId + " не найдена");
+        }
+
+        if (eventClient.existsByCategoryId(catId)) {
+            throw new ConflictException("Категория с id=" + catId + " используется в событиях.");
+        }
+
+        categoryRepository.deleteById(catId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryDto> getCategories(Integer from, Integer size) {
+        PageRequest pageRequest = PageRequest.of(from / size, size);
+        return categoryRepository.findAll(pageRequest).stream()
+                .map(categoryMapper::toCategoryDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CategoryDto getCategory(Long catId) {
+        Category category = categoryRepository.findById(catId)
+                .orElseThrow(() -> new NotFoundException("Категория с id=" + catId + " не найдена"));
+        return categoryMapper.toCategoryDto(category);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoryDto> getCategoriesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return categoryRepository.findAllById(ids).stream()
+                .map(categoryMapper::toCategoryDto)
+                .collect(Collectors.toList());
+    }
+}

@@ -29,7 +29,12 @@
     </dependencies>
 
     <modules>
-        <module>main-service</module>
+        <module>user-service</module>
+        <module>category-service</module>
+        <module>event-service</module>
+        <module>request-service</module>
+        <module>compilation-service</module>
+        <module>common-lib</module>
     </modules>
 
 </project>

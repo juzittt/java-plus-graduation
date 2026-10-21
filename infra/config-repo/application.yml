@@ -1,0 +1,34 @@
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      requestService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+      eventService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+  retry:
+    instances:
+      requestService:
+        max-attempts: 3
+        wait-duration: 500ms
+      eventService:
+        max-attempts: 3
+        wait-duration: 500ms
+
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
