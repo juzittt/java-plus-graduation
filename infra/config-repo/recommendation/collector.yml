@@ -8,14 +8,13 @@ grpc:
 spring:
   application:
     name: collector
-
   kafka:
     bootstrap-servers: kafka:29092
     producer:
       key-serializer: org.apache.kafka.common.serialization.LongSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
-        schema.registry.url: http://localhost:8081
+        schema.registry.url: http://schema-registry:8081
 
 management:
   endpoints:

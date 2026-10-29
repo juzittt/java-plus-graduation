@@ -18,7 +18,7 @@ public interface EventsService {
 
     List<EventShortDto> getEvents(PublicEventParams params, HttpServletRequest request);
 
-    EventFullDto getEvent(Long id, HttpServletRequest request);
+    EventFullDto getEvent(Long id);
 
     EventFullDto createEvent(Long userId, NewEventDto dto);
 
@@ -37,4 +37,6 @@ public interface EventsService {
     List<EventShortDto> getShortDtosByIds(List<Long> ids);
 
     boolean existsByCategoryId(Long categoryId);
+
+    List<EventFullDto> getEventsByIds(List<Long> ids);
 }

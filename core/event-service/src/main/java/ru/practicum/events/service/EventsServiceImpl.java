@@ -1,19 +1,16 @@
 package ru.practicum.events.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import client.StatsAnalyzerClient;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.client.CategoryClient;
 import ru.practicum.client.RequestClient;
-import ru.practicum.client.StatsClient;
 import ru.practicum.client.UserClient;
 import ru.practicum.common.dto.CategoryDto;
 import ru.practicum.common.dto.EventShortDto;
@@ -31,6 +28,7 @@ import ru.practicum.events.model.Event;
 import ru.practicum.events.model.State;
 import ru.practicum.events.repository.EventsRepository;
 import ru.practicum.events.repository.specification.EventSpecification;
+import ru.practicum.ewm.stats.grpc.RecommendedEventProto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -45,15 +43,13 @@ public class EventsServiceImpl implements EventsService {
 
     private final EventsRepository eventsRepository;
     private final EventMapper eventMapper;
-    private final StatsClient statsClient;
     private final UserClient userClient;
     private final CategoryClient categoryClient;
-    private final ObjectMapper objectMapper;
     private final RequestClient requestClient;
+    private final StatsAnalyzerClient statsAnalyzerClient;
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT);
-    private static final String APP_NAME = "ewm-event-service";
 
     @Override
     @Transactional(readOnly = true)
@@ -64,8 +60,6 @@ public class EventsServiceImpl implements EventsService {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new ValidationException("rangeStart must be before rangeEnd");
         }
-
-        sendHitToStats("/events", request.getRemoteAddr());
 
         Specification<Event> spec = Specification
                 .where(EventSpecification.published())
@@ -83,33 +77,27 @@ public class EventsServiceImpl implements EventsService {
 
         spec = spec.and(EventSpecification.onlyAvailable(params.getOnlyAvailable(), availableEventIds));
 
-        return switch (params.getSort()) {
-            case VIEWS -> getEventsSortedByViews(spec, params);
-            case EVENT_DATE -> getEventsSortedByDate(spec, params);
-            case null -> getEventsSortedByDate(spec, params);
-        };
+        EventSort sort = params.getSort();
+        if (sort == null || sort == EventSort.EVENT_DATE) {
+            return getEventsSortedByDate(spec, params);
+        } else if (sort == EventSort.VIEWS) {
+            return getEventsSortedByDate(spec, params);
+        } else {
+            return getEventsSortedByDate(spec, params);
+        }
     }
 
     private List<Long> filterAvailableEvents(List<Event> events) {
-        if (events.isEmpty()) {
-            return List.of();
-        }
+        if (events.isEmpty()) return List.of();
 
         List<Long> eventIds = events.stream().map(Event::getId).toList();
-
         Map<Long, Long> confirmedCounts = requestClient.getConfirmedCounts(eventIds).stream()
-                .collect(Collectors.toMap(
-                        EventRequestsCountDto::eventId,
-                        EventRequestsCountDto::confirmedRequests,
-                        (a, b) -> a
-                ));
+                .collect(Collectors.toMap(EventRequestsCountDto::eventId, EventRequestsCountDto::confirmedRequests, (a, b) -> a));
 
         return events.stream()
                 .filter(event -> {
                     Integer limit = event.getParticipantLimit();
-                    if (limit == null || limit == 0) {
-                        return true;
-                    }
+                    if (limit == null || limit == 0) return true;
                     long confirmed = confirmedCounts.getOrDefault(event.getId(), 0L);
                     return confirmed < limit;
                 })
@@ -126,9 +114,7 @@ public class EventsServiceImpl implements EventsService {
                 Sort.by(Sort.Direction.DESC, "eventDate")
         );
 
-        List<State> states = params.getStates() == null
-                ? null
-                : params.getStates().stream().map(State::valueOf).toList();
+        List<State> states = params.getStates() == null ? null : params.getStates().stream().map(State::valueOf).toList();
 
         Specification<Event> spec = Specification
                 .where(EventSpecification.hasUser(params.getUsers()))
@@ -140,20 +126,18 @@ public class EventsServiceImpl implements EventsService {
         Page<Event> page = eventsRepository.findAll(spec, pageRequest);
         List<Event> events = page.getContent();
 
-        if (events.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (events.isEmpty()) return Collections.emptyList();
 
         List<EventFullDto> dtos = eventMapper.toEventFullDtoList(events);
         enrichWithUsersAndCategories(dtos);
-        enrichEventFullDtosWithStats(dtos);
+        enrichWithRating(dtos);
 
         return dtos;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public EventFullDto getEvent(Long id, HttpServletRequest request) {
+    public EventFullDto getEvent(Long id) {
         Event event = eventsRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Event с id=" + id + " не найден"));
 
@@ -161,11 +145,9 @@ public class EventsServiceImpl implements EventsService {
             throw new NotFoundException("Event с id=" + id + " не найден");
         }
 
-        sendHitToStats("/events/" + id, request.getRemoteAddr());
-
         EventFullDto dto = eventMapper.toEventFullDto(event);
         enrichEventWithUserAndCategory(dto);
-        enrichEventWithStats(dto);
+        enrichWithRating(List.of(dto));
 
         return dto;
     }
@@ -173,8 +155,7 @@ public class EventsServiceImpl implements EventsService {
     @Override
     public EventFullDto createEvent(Long userId, NewEventDto dto) {
         categoryClient.getCategory(dto.getCategory());
-
-         userClient.getUserById(userId);
+        userClient.getUserById(userId);
 
         LocalDateTime eventDate = parseAndValidateEventDate(
                 dto.getEventDate(),
@@ -192,7 +173,7 @@ public class EventsServiceImpl implements EventsService {
 
         EventFullDto result = eventMapper.toEventFullDto(event);
         enrichEventWithUserAndCategory(result);
-        result.setViews(0L);
+        result.setRating(0.0); // Инициализируем
         result.setConfirmedRequests(0L);
 
         return result;
@@ -206,7 +187,7 @@ public class EventsServiceImpl implements EventsService {
 
         EventFullDto dto = eventMapper.toEventFullDto(event);
         enrichEventWithUserAndCategory(dto);
-        enrichEventWithStats(dto);
+        enrichWithRating(List.of(dto));
 
         return dto;
     }
@@ -215,8 +196,6 @@ public class EventsServiceImpl implements EventsService {
     @Transactional(readOnly = true)
     public List<EventShortDto> getUserEvents(Long userId, PaginationParams params, HttpServletRequest request) {
         userClient.getUserById(userId);
-
-        sendHitToStats("/users/" + userId + "/events", request.getRemoteAddr());
 
         PageRequest pageRequest = PageRequest.of(
                 params.getFrom() / params.getSize(),
@@ -227,14 +206,10 @@ public class EventsServiceImpl implements EventsService {
         Page<Event> page = eventsRepository.findByInitiatorId(userId, pageRequest);
         List<Event> events = page.getContent();
 
-        if (events.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (events.isEmpty()) return Collections.emptyList();
 
         List<EventShortDto> dtos = eventMapper.toEventShortDtoList(events);
         enrichShortWithUsersAndCategories(dtos);
-        enrichEventsWithStats(dtos);
-
         return dtos;
     }
 
@@ -250,7 +225,7 @@ public class EventsServiceImpl implements EventsService {
 
         EventFullDto result = eventMapper.toEventFullDto(event);
         enrichEventWithUserAndCategory(result);
-        enrichEventWithStats(result);
+        enrichWithRating(List.of(result));
 
         return result;
     }
@@ -301,7 +276,7 @@ public class EventsServiceImpl implements EventsService {
 
         EventFullDto result = eventMapper.toEventFullDto(event);
         enrichEventWithUserAndCategory(result);
-        enrichEventWithStats(result);
+        enrichWithRating(List.of(result));
 
         return result;
     }
@@ -324,9 +299,7 @@ public class EventsServiceImpl implements EventsService {
     @Override
     @Transactional(readOnly = true)
     public List<EventShortDto> getShortDtosByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return List.of();
-        }
+        if (ids == null || ids.isEmpty()) return List.of();
 
         List<Event> events = eventsRepository.findAllById(ids);
         List<EventShortDto> dtos = eventMapper.toEventShortDtoList(events);
@@ -336,105 +309,33 @@ public class EventsServiceImpl implements EventsService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<EventFullDto> getEventsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+
+        List<Event> events = eventsRepository.findAllById(ids);
+        List<EventFullDto> dtos = eventMapper.toEventFullDtoList(events);
+        enrichWithUsersAndCategories(dtos);
+        enrichWithRating(dtos);
+
+        Map<Long, EventFullDto> eventMap = dtos.stream().collect(Collectors.toMap(EventFullDto::getId, Function.identity()));
+        return ids.stream().map(eventMap::get).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean existsByCategoryId(Long categoryId) {
         return eventsRepository.existsByCategoryId(categoryId);
     }
 
-    private void sendHitToStats(String uri, String ip) {
-        statsClient.saveHit(EndpointHitDto.builder()
-                .app(APP_NAME)
-                .uri(uri)
-                .ip(ip)
-                .timestamp(LocalDateTime.now())
-                .build());
-    }
-
-    private Map<Long, Long> getViewsMap(List<Long> eventIds) {
-        if (eventIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        try {
-            List<String> uris = eventIds.stream().map(id -> "/events/" + id).toList();
-
-            ResponseEntity<Object> response = statsClient.getStats(
-                    LocalDateTime.of(2000, 1, 1, 0, 0).format(FORMATTER),
-                    LocalDateTime.now().format(FORMATTER),
-                    uris,
-                    true
-            );
-
-            if (response.getBody() == null) {
-                return Collections.emptyMap();
-            }
-
-            List<ViewStatsDto> stats = objectMapper.convertValue(
-                    response.getBody(),
-                    new TypeReference<List<ViewStatsDto>>() {}
-            );
-
-            if (stats == null || stats.isEmpty()) {
-                return Collections.emptyMap();
-            }
-
-            return stats.stream()
-                    .collect(Collectors.toMap(
-                            stat -> Long.parseLong(stat.getUri().substring(stat.getUri().lastIndexOf('/') + 1)),
-                            ViewStatsDto::getHits,
-                            (existing, replacement) -> existing
-                    ));
-        } catch (Exception e) {
-            return Collections.emptyMap();
-        }
-    }
-
-    private Map<Long, Long> getConfirmedRequestsMap(List<Long> eventIds) {
-        if (eventIds == null || eventIds.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        try {
-            return requestClient.getConfirmedCounts(eventIds).stream()
-                    .collect(Collectors.toMap(
-                            EventRequestsCountDto::eventId,
-                            EventRequestsCountDto::confirmedRequests,
-                            (a, b) -> a
-                    ));
-        } catch (Exception e) {
-            return Collections.emptyMap();
-        }
-    }
-
-    private void enrichEventWithStats(EventFullDto dto) {
-        Map<Long, Long> viewsMap = getViewsMap(List.of(dto.getId()));
-        Map<Long, Long> confirmedMap = getConfirmedRequestsMap(List.of(dto.getId()));
-
-        dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
-        dto.setConfirmedRequests(confirmedMap.getOrDefault(dto.getId(), 0L));
-    }
-
-    private void enrichEventsWithStats(List<EventShortDto> dtos) {
+    private void enrichWithRating(List<EventFullDto> dtos) {
         if (dtos.isEmpty()) return;
-
-        List<Long> eventIds = dtos.stream().map(EventShortDto::getId).toList();
-        Map<Long, Long> viewsMap = getViewsMap(eventIds);
-        Map<Long, Long> confirmedMap = getConfirmedRequestsMap(eventIds);
-
-        dtos.forEach(dto -> {
-            dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
-            dto.setConfirmedRequests(confirmedMap.getOrDefault(dto.getId(), 0L));
-        });
-    }
-
-    private void enrichEventFullDtosWithStats(List<EventFullDto> dtos) {
-        if (dtos.isEmpty()) return;
-
         List<Long> eventIds = dtos.stream().map(EventFullDto::getId).toList();
-        Map<Long, Long> viewsMap = getViewsMap(eventIds);
-        Map<Long, Long> confirmedMap = getConfirmedRequestsMap(eventIds);
 
-        dtos.forEach(dto -> {
-            dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
-            dto.setConfirmedRequests(confirmedMap.getOrDefault(dto.getId(), 0L));
-        });
+        List<RecommendedEventProto> ratings = statsAnalyzerClient.getInteractionsCount(eventIds);
+        Map<Long, Double> ratingMap = ratings.stream()
+                .collect(Collectors.toMap(RecommendedEventProto::getEventId, RecommendedEventProto::getScore, (a, b) -> a));
+
+        dtos.forEach(dto -> dto.setRating(ratingMap.getOrDefault(dto.getId(), 0.0)));
     }
 
     private void enrichWithUsersAndCategories(List<EventFullDto> dtos) {
@@ -455,7 +356,7 @@ public class EventsServiceImpl implements EventsService {
         });
     }
 
-    public void enrichShortWithUsersAndCategories(List<EventShortDto> dtos) {
+    private void enrichShortWithUsersAndCategories(List<EventShortDto> dtos) {
         Set<Long> userIds = dtos.stream().map(dto -> dto.getInitiator().getId()).collect(Collectors.toSet());
         Set<Long> categoryIds = dtos.stream().map(dto -> dto.getCategory().getId()).collect(Collectors.toSet());
 
@@ -558,38 +459,10 @@ public class EventsServiceImpl implements EventsService {
         Page<Event> page = eventsRepository.findAll(spec, pageRequest);
         List<Event> events = page.getContent();
 
-        if (events.isEmpty()) {
-            return Collections.emptyList();
-        }
+        if (events.isEmpty()) return Collections.emptyList();
 
         List<EventShortDto> dtos = eventMapper.toEventShortDtoList(events);
         enrichShortWithUsersAndCategories(dtos);
-        enrichEventsWithStats(dtos);
-
         return dtos;
-    }
-
-    private List<EventShortDto> getEventsSortedByViews(Specification<Event> spec, PublicEventParams params) {
-        List<Event> allEvents = eventsRepository.findAll(spec);
-
-        if (allEvents.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<EventShortDto> dtos = eventMapper.toEventShortDtoList(allEvents);
-        enrichShortWithUsersAndCategories(dtos);
-        enrichEventsWithStats(dtos);
-
-        dtos.sort(Comparator.comparing(EventShortDto::getViews).reversed());
-
-        int from = params.getFrom();
-        int size = params.getSize();
-
-        if (from >= dtos.size()) {
-            return Collections.emptyList();
-        }
-
-        int toIndex = Math.min(from + size, dtos.size());
-        return dtos.subList(from, toIndex);
     }
 }
