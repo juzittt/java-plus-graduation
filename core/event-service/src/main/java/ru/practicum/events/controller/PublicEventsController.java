@@ -1,7 +1,7 @@
 package ru.practicum.events.controller;
 
-import client.StatsAnalyzerClient;
-import client.StatsCollectorClient;
+import ru.practicum.client.StatsAnalyzerClient;
+import ru.practicum.client.StatsCollectorClient;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;

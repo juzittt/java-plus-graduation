@@ -1,4 +1,4 @@
-package client;
+package ru.practicum.client;
 
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.client.inject.GrpcClient;

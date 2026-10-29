@@ -1,4 +1,4 @@
-package client;
+package ru.practicum.client;
 
 import com.google.protobuf.Timestamp;
 import lombok.RequiredArgsConstructor;

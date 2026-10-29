@@ -1,6 +1,6 @@
 package ru.practicum.requests.service;
 
-import client.StatsCollectorClient;
+import ru.practicum.client.StatsCollectorClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

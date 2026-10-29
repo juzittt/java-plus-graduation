@@ -1,6 +1,6 @@
 package ru.practicum.events.service;
 
-import client.StatsAnalyzerClient;
+import ru.practicum.client.StatsAnalyzerClient;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
