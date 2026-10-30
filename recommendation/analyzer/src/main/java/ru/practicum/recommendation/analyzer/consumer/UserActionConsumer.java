@@ -53,9 +53,9 @@ public class UserActionConsumer {
 
     private Double getWeight(ActionTypeAvro actionType) {
         return switch (actionType) {
-            case VIEW -> 1.0;
-            case REGISTER -> 3.0;
-            case LIKE -> 5.0;
+            case VIEW -> 0.4;
+            case REGISTER -> 0.8;
+            case LIKE -> 1.0;
         };
     }
 }

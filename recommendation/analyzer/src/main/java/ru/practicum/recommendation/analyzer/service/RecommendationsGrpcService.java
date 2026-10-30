@@ -30,17 +30,13 @@ public class RecommendationsGrpcService extends RecommendationsControllerGrpc.Re
 
         List<Object[]> results = userInteractionRepository.sumMaxWeightByEventIdIn(eventIds);
 
-        final double MAX_WEIGHT = 5.0;
-
         for (Object[] row : results) {
             Long eventId = (Long) row[0];
             Double totalWeight = (Double) row[1];
 
-            double normalizedScore = totalWeight / MAX_WEIGHT;
-
             RecommendedEventProto proto = RecommendedEventProto.newBuilder()
                     .setEventId(eventId)
-                    .setScore(normalizedScore)
+                    .setScore(totalWeight)
                     .build();
             responseObserver.onNext(proto);
         }

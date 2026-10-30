@@ -24,9 +24,9 @@ public class AggregatorListener {
     private final Map<Long, Double> eventTotalWeights = new ConcurrentHashMap<>();
     private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
 
-    private static final double WEIGHT_VIEW = 1.0;
-    private static final double WEIGHT_REGISTER = 3.0;
-    private static final double WEIGHT_LIKE = 5.0;
+    private static final double WEIGHT_VIEW = 0.4;
+    private static final double WEIGHT_REGISTER = 0.8;
+    private static final double WEIGHT_LIKE = 1.0;
 
     private static final String TOPIC_USER_ACTIONS = "stats.user-actions.v1";
     private static final String TOPIC_SIMILARITY = "stats.events-similarity.v1";
