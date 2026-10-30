@@ -20,7 +20,11 @@ public class EventSimilarityConsumer {
 
     private static final String TOPIC_SIMILARITY = "stats.events-similarity.v1";
 
-    @KafkaListener(topics = TOPIC_SIMILARITY, groupId = "analyzer-group")
+    @KafkaListener(
+            topics = TOPIC_SIMILARITY,
+            groupId = "analyzer-group",
+            containerFactory = "eventSimilarityKafkaListenerContainerFactory"
+    )
     public void onEventSimilarity(EventSimilarityAvro similarity) {
         Long eventA = similarity.getEventA();
         Long eventB = similarity.getEventB();

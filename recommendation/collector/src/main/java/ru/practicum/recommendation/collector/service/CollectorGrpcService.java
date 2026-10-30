@@ -6,6 +6,7 @@ import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.service.GrpcService;
+import org.apache.avro.specific.SpecificRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
@@ -18,7 +19,7 @@ import java.time.Instant;
 @RequiredArgsConstructor
 public class CollectorGrpcService extends UserActionControllerGrpc.UserActionControllerImplBase {
 
-    private final KafkaTemplate<Long, UserActionAvro> kafkaTemplate;
+    private final KafkaTemplate<Long, SpecificRecord> kafkaTemplate;
 
     private static final long SECONDS_TO_MILLIS = 1000L;
     private static final long NANOS_TO_MILLIS = 1_000_000L;
@@ -40,7 +41,7 @@ public class CollectorGrpcService extends UserActionControllerGrpc.UserActionCon
             long timestampMs = request.getTimestamp().getSeconds() * SECONDS_TO_MILLIS +
                     request.getTimestamp().getNanos() / NANOS_TO_MILLIS;
 
-            UserActionAvro avroMessage = UserActionAvro.newBuilder()
+            SpecificRecord avroMessage = UserActionAvro.newBuilder()
                     .setUserId(request.getUserId())
                     .setEventId(request.getEventId())
                     .setActionType(avroActionType)

@@ -21,7 +21,11 @@ public class UserActionConsumer {
 
     private static final String TOPIC_USER_ACTIONS = "stats.user-actions.v1";
 
-    @KafkaListener(topics = TOPIC_USER_ACTIONS, groupId = "analyzer-group")
+    @KafkaListener(
+            topics = TOPIC_USER_ACTIONS,
+            groupId = "analyzer-group",
+            containerFactory = "userActionKafkaListenerContainerFactory"
+    )
     public void onUserAction(UserActionAvro action) {
         Long userId = action.getUserId();
         Long eventId = action.getEventId();

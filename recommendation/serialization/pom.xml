@@ -14,6 +14,7 @@
     <modules>
         <module>avro-schemas</module>
         <module>proto-schemas</module>
+        <module>kafka</module>
     </modules>
 
     <properties>
