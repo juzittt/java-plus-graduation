@@ -25,13 +25,13 @@ public interface EventMapper {
 
     @Mapping(target = "initiator.id", source = "initiatorId")
     @Mapping(target = "category.id", source = "categoryId")
-    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "rating", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     EventFullDto toEventFullDto(Event event);
 
     @Mapping(target = "initiator.id", source = "initiatorId")
     @Mapping(target = "category.id", source = "categoryId")
-    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "rating", ignore = true)
     @Mapping(target = "confirmedRequests", ignore = true)
     EventShortDto toEventShortDto(Event event);
 

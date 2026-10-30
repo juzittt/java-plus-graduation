@@ -1,6 +1,6 @@
-package client;
+package ru.practicum.client;
 
-import exception.StatsServerUnavailable;
+import ru.practicum.exception.StatsServerUnavailable;
 import ewm.dto.EndpointHitDto;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;

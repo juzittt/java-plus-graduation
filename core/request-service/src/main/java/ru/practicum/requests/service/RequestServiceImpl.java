@@ -1,5 +1,6 @@
 package ru.practicum.requests.service;
 
+import ru.practicum.client.StatsCollectorClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import ru.practicum.requests.mapper.ParticipationRequestMapper;
 import ru.practicum.requests.model.ParticipationRequest;
 import ru.practicum.requests.model.ParticipationStatus;
 import ru.practicum.requests.repository.ParticipationRequestsRepository;
+import ru.practicum.ewm.stats.grpc.ActionTypeProto;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ public class RequestServiceImpl implements RequestService {
     private final ParticipationRequestsRepository requestRepository;
     private final ParticipationRequestMapper requestMapper;
     private final EventClient eventClient;
+    private final StatsCollectorClient statsCollectorClient;
 
     @Override
     @Transactional(readOnly = true)
@@ -70,7 +73,11 @@ public class RequestServiceImpl implements RequestService {
                 .status(status)
                 .build();
 
-        return requestMapper.toDto(requestRepository.save(request));
+        ParticipationRequest savedRequest = requestRepository.save(request);
+
+        statsCollectorClient.sendAction(userId, eventId, ActionTypeProto.ACTION_REGISTER, LocalDateTime.now());
+
+        return requestMapper.toDto(savedRequest);
     }
 
     @Override
@@ -185,6 +192,4 @@ public class RequestServiceImpl implements RequestService {
                 .rejectedRequests(List.of())
                 .build();
     }
-
-
 }

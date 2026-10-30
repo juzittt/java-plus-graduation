@@ -1,3 +1,4 @@
+/*
 package ru.practicum.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
@@ -21,4 +22,4 @@ public interface StatsClient {
                                     @RequestParam("end") String end,
                                     @RequestParam(value = "uris", required = false) List<String> uris,
                                     @RequestParam("unique") Boolean unique);
-}
+}*/

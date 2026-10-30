@@ -7,7 +7,7 @@ spring:
       handler-mapping-order: 10
       discovery:
         locator:
-          enabled: false
+          enabled: true
       routes:
         - id: user-service
           uri: lb://user-service
