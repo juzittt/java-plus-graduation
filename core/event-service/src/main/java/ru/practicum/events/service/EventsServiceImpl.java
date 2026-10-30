@@ -146,6 +146,11 @@ public class EventsServiceImpl implements EventsService {
         }
 
         EventFullDto dto = eventMapper.toEventFullDto(event);
+
+        if (dto.getRating() == null) {
+            dto.setRating(0.0);
+        }
+
         enrichEventWithUserAndCategory(dto);
         enrichWithRating(List.of(dto));
 
@@ -328,7 +333,7 @@ public class EventsServiceImpl implements EventsService {
     }
 
     private void enrichWithRating(List<EventFullDto> dtos) {
-        if (dtos.isEmpty()) return;
+        if (dtos == null || dtos.isEmpty()) return;
         List<Long> eventIds = dtos.stream().map(EventFullDto::getId).toList();
 
         List<RecommendedEventProto> ratings = statsAnalyzerClient.getInteractionsCount(eventIds);
