@@ -129,8 +129,22 @@ public class EventsServiceImpl implements EventsService {
         if (events.isEmpty()) return Collections.emptyList();
 
         List<EventFullDto> dtos = eventMapper.toEventFullDtoList(events);
+
+        List<Long> eventIds = events.stream().map(Event::getId).toList();
+        List<EventRequestsCountDto> counts = requestClient.getConfirmedCounts(eventIds);
+
+        Map<Long, Integer> confirmedRequestsMap = counts.stream()
+                .collect(Collectors.toMap(
+                        EventRequestsCountDto::eventId,
+                        dto -> dto.confirmedRequests().intValue()
+                ));
+
         enrichWithUsersAndCategories(dtos);
         enrichWithRating(dtos);
+
+        dtos.forEach(dto -> {
+            dto.setConfirmedRequests(Long.valueOf(confirmedRequestsMap.getOrDefault(dto.getId(), 0)));
+        });
 
         return dtos;
     }
