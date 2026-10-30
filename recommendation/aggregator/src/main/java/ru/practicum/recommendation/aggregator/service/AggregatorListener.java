@@ -76,7 +76,7 @@ public class AggregatorListener {
 
             double totalWeightB = eventTotalWeights.get(otherEventId);
             double denominator = Math.sqrt(totalWeightA) * Math.sqrt(totalWeightB);
-            double similarity = denominator > 0 ? (currentMinSum / denominator) : 0.0;
+            double similarity = denominator > 0 ? (currentMinSum / Math.sqrt(totalWeightA * totalWeightB)) : 0.0;
 
             EventSimilarityAvro similarityAvro = EventSimilarityAvro.newBuilder()
                     .setEventA(first)
