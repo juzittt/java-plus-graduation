@@ -11,6 +11,8 @@ import ru.practicum.recommendation.analyzer.entity.UserInteraction;
 import ru.practicum.recommendation.analyzer.repository.EventSimilarityRepository;
 import ru.practicum.recommendation.analyzer.repository.UserInteractionRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,9 +36,13 @@ public class RecommendationsGrpcService extends RecommendationsControllerGrpc.Re
             Long eventId = (Long) row[0];
             Double totalWeight = (Double) row[1];
 
+            double roundedScore = BigDecimal.valueOf(totalWeight)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .doubleValue();
+
             RecommendedEventProto proto = RecommendedEventProto.newBuilder()
                     .setEventId(eventId)
-                    .setScore(totalWeight)
+                    .setScore(roundedScore)
                     .build();
             responseObserver.onNext(proto);
         }
